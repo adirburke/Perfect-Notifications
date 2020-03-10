@@ -188,6 +188,8 @@ public struct NotificationResponse: CustomStringConvertible {
 	public let status: HTTPResponseStatus
 	/// The response body data bytes.
 	public let body: [UInt8]
+    /// The device token this response is related to
+    public let deviceToken : String
 	/// The body data bytes interpreted as JSON and decoded into a Dictionary.
 	public var jsonObjectBody: [String:Any] {
 		do {
@@ -366,9 +368,9 @@ public class NotificationPusher {
 		net.sendRequest(request) {
 			response, msg in
             guard let r = response else {
-                return callback(NotificationResponse(status: .internalServerError, body: UTF8Encoding.decode(string: msg ?? "No response")))
+                return callback(NotificationResponse(status: .internalServerError, body: UTF8Encoding.decode(string: msg ?? "No response"), deviceToken: deviceToken))
             }
-            callback(NotificationResponse(status: r.status, body: r.bodyBytes))
+            callback(NotificationResponse(status: r.status, body: r.bodyBytes, deviceToken: deviceToken))
 		}
 	}
 	
@@ -384,8 +386,8 @@ public class NotificationPusher {
 					} else {
 						msg = Array("Could not connect".utf8)
 					}
-					self.responses.append(NotificationResponse(status: .internalServerError, body: msg))
-					self.responses.append(contentsOf: remainingDeviceTokens.map { _ -> NotificationResponse in NotificationResponse(status: .internalServerError, body: msg) })
+                    self.responses.append(NotificationResponse(status: .internalServerError, body: msg, deviceToken: deviceToken))
+					self.responses.append(contentsOf: remainingDeviceTokens.map { _ -> NotificationResponse in NotificationResponse(status: .internalServerError, body: msg, deviceToken: "All") })
 					return callback(self.responses)
 				}
 				if recovery {
@@ -521,13 +523,13 @@ public extension NotificationPusher {
 		NotificationPusher.getStreamAPNS(configurationName: configurationName) {
 			client, config in
 			guard let c = client, let config = config else {
-				return callback([NotificationResponse(status: .internalServerError, body: [])])
+                return callback([NotificationResponse(status: .internalServerError, body: [], deviceToken: deviceTokens.reduce("", {"\($0), \($1)"}))])
 			}
 			self.pushAPNS(c, config: config, deviceTokens: deviceTokens, notificationItems: notificationItems) {
 				responses in
 				NotificationPusher.releaseStreamAPNS(configurationName: configurationName, net: c)
 				guard responses.count == deviceTokens.count else {
-					return callback([NotificationResponse(status: .internalServerError, body: [])])
+                    return callback([NotificationResponse(status: .internalServerError, body: [], deviceToken: deviceTokens.reduce("", {"\($0), \($1)"}))])
 				}
 				callback(responses)
 			}
