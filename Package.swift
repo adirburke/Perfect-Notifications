@@ -11,8 +11,8 @@ let package = Package(
 	],
 	dependencies: [
 		// .package(url: "https://github.com/PerfectlySoft/Perfect-Net.git", from: "4.0.0"),
-		.package(path: "~/Dev/Perfect/Perfect-Net"),
-		.package(path: "~/Dev/Perfect/Perfect-Thread"),
+		.package(path: "../Perfect-Net"),
+		.package(path: "../Perfect-Thread"),
 		// .package(url: "https://github.com/PerfectlySoft/Perfect-Thread.git", from: "3.0.0")
 	],
 	targets: [
